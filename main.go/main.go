@@ -1,10 +1,11 @@
 package main
 
 import (
-	"errors"
+	// "errors"
+	"strings"
 	"bufio"
 	"os"
-	"fmt"
+	// "fmt"
 	"log"
 	"omise_challenges/cipher"
 )
@@ -23,27 +24,49 @@ func main () {
 		}
 	}()
 
-	stats, err := file.Stat()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	reader := bufio.NewReader(file)
 	rot12Reader, err := cipher.NewRot128Reader(reader)
-	buffer := make([]byte, stats.Size())
 
-	n, err := rot12Reader.Read(buffer)
-	// EOF error won't be reached
-	if err != nil {
-		log.Fatal(err)
+	const INITIAL_SIZE = 50
+	buffer := make([]byte, INITIAL_SIZE)
+
+	start := 0
+	for {
+		n, err := rot12Reader.Read(buffer[start:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("BYTES READ: ", n)
+		// get buffer
+		log.Println("ORIGINAL: \n",string(buffer))
+
+		lastIndexOfNewLine := strings.LastIndex(string(buffer), "\n")
+		log.Println("Last index of :", lastIndexOfNewLine)
+
+		// In this case extend the buffer capacity
+		// Try to keep buffer capacity as low as possible
+		if lastIndexOfNewLine == -1 {
+			tmpBuffer := make([]byte, cap(buffer) * 2)
+			copy(tmpBuffer, buffer)
+			buffer = tmpBuffer
+
+			log.Println("NEW BUFFER CAPACITY:", cap(buffer))
+			start = cap(buffer) / 2
+			continue
+		}
+
+
+		// for idx, piece := range strings.Split(string(buffer[:lastIndexOfNewLine + 1]), "\n") {
+		// 	// log.Println(idx, piece)
+		// }
+
+		copy(buffer, buffer[lastIndexOfNewLine + 1:])
+		log.Println("MODIFIED: \n",string(buffer))
+		start = cap(buffer) - lastIndexOfNewLine - 1
+
+		log.Println(start, " ", cap(buffer))
 	}
 
-	if int64(n) < stats.Size() {
-		log.Fatal(errors.New("File not read fully"))
-	}
-
-	// get buffer
-	log.Println(string(buffer[0:n]))
 	// clear buffer
 	buffer = nil
 	log.Println("after nil:", buffer)
