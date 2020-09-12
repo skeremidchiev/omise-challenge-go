@@ -6,11 +6,9 @@ import (
 	"strings"
 	"bufio"
 	"os"
-	// "fmt"
-	"log"
 	"omise_challenges/cipher"
+	"omise_challenges/utils"
 )
-
 
 const (
 	INITIAL_CAPACITY = 50
@@ -20,17 +18,19 @@ const (
 	MAX_CAPACITY = 1000
 )
 
+// Parse()
+// Inputs - name of file containing user data
+//        - input channel to return data
+// Returns - error
 func Parse(fileName string, outputChan chan<- string) error {
+	// Close the output channel when done
+	defer close(outputChan)
+
 	file, err := os.Open(fileName)
 	if err != nil {
 		return err
 	}
-
-	defer func () {
-		if err = file.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	defer file.Close()
 
 	reader := bufio.NewReader(file)
 	rot12Reader, err := cipher.NewRot128Reader(reader)
@@ -77,9 +77,7 @@ func Parse(fileName string, outputChan chan<- string) error {
 		}
 
 		// If End of File is reached parsing is done
-		// Close the output channel
 		if err == io.EOF {
-			close(outputChan)
 			break
 		}
 
@@ -89,4 +87,23 @@ func Parse(fileName string, outputChan chan<- string) error {
 	}
 
 	return nil
+}
+
+// SplitAndValidate() - kind of messy client side validation
+// Inputs - single user data
+// Returns - array of strings with user data
+//         - boolean - true on successful validation
+func SplitAndValidate(userInfo string) ([]string, bool) {
+	splittedData := strings.Split(userInfo, ",")
+	for index, data := range splittedData {
+		if index == 0 {
+			// can't properly validate name of the user
+			continue
+		} else {
+			if !utils.IsInt(data) {
+				return nil, false
+			}
+		}
+	}
+	return splittedData, true
 }
