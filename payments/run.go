@@ -12,11 +12,9 @@ const (
 	WORKERS_LIMIT = 3
 )
 
-func worker(jobsChan <-chan string, resultChan chan<- *PaymentResult, wg *sync.WaitGroup) {
+func worker(jobsChan <-chan string, sum *Summary, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for data := range jobsChan {
-		// fmt.Printf("USER:\n%s\n", data)
-
 		dataArr, valid := parser.SplitAndValidate(data)
 		if !valid {
 			// dropping invalid user data
@@ -24,8 +22,13 @@ func worker(jobsChan <-chan string, resultChan chan<- *PaymentResult, wg *sync.W
 		}
 
 		result := Pay(dataArr)
-		// fmt.Println(result)
-		resultChan <- result
+
+		// adding data to summary
+		wg.Add(1)
+		go func(r *PaymentResult) {
+			defer wg.Done()
+			sum.Add(r)
+		} (result)
 	}
 }
 
@@ -33,11 +36,10 @@ func Run(donationsFP, configFP string) {
 	fmt.Println("performing donations...")
 
 	// initial set up
+	config.SetConfigFilePath(configFP)
 	var wg sync.WaitGroup
 	jobsChan := make(chan string) // listen for a new job
-	resultChan := make(chan *PaymentResult, WORKERS_LIMIT * 2) // used for summary
 	sum := GetSummaryObject()
-	config.SetConfigFilePath(configFP)
 
 	// I'm hitting the rate limits with more than 3 go routines
 	// 429 - Too many requests and 500 - ???
@@ -45,15 +47,8 @@ func Run(donationsFP, configFP string) {
 	// mine is too static and not 100% effective
 	for w := 1; w <= WORKERS_LIMIT; w++ {
 		wg.Add(1)
-		go worker(jobsChan, resultChan, &wg)
+		go worker(jobsChan, sum, &wg)
 	}
-
-	// summary
-	go func() {
-		for r := range resultChan {
-			sum.Add(r)
-		}
-	}()
 
 	// feed jobs channel
 	go func () {
@@ -61,7 +56,7 @@ func Run(donationsFP, configFP string) {
 		if err != nil {
 			log.Println("Error During Parsing: ", err)
 		}
-		// Close the output channel when done
+		// Close the output channel when done parsing
 		defer close(jobsChan)
 	}()
 
