@@ -18,14 +18,13 @@ const (
 	MAX_CAPACITY = 1000
 )
 
-// Parse()
-// Inputs - name of file containing user data
-//        - input channel to return data
-// Returns - error
+// Parse() - too complicated
+// Inputs:
+//     - name of file containing user data
+//     - input channel to return data
+// Returns
+//     - error
 func Parse(fileName string, outputChan chan<- string) error {
-	// Close the output channel when done
-	defer close(outputChan)
-
 	file, err := os.Open(fileName)
 	if err != nil {
 		return err
@@ -90,9 +89,11 @@ func Parse(fileName string, outputChan chan<- string) error {
 }
 
 // SplitAndValidate() - kind of messy client side validation
-// Inputs - single user data
-// Returns - array of strings with user data
-//         - boolean - true on successful validation
+// Inputs
+//     - single user data
+// Returns
+//     - array of strings with user data
+//     - boolean - true on successful validation
 func SplitAndValidate(userInfo string) ([]string, bool) {
 	splittedData := strings.Split(userInfo, ",")
 	for index, data := range splittedData {

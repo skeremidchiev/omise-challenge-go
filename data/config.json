@@ -1,4 +1,6 @@
 {
   "OMISE_API_PUBLIC_KEY": "pkey_test_5l6h75ibfneodv8zxfs",
-  "OMISE_API_TOKENS_URL": "https://vault.omise.co/tokens"
+  "OMISE_API_SECRET_KEY": "skey_test_5l6h75ibqepw4d34l1f",
+  "OMISE_API_TOKENS_URL": "https://vault.omise.co/tokens",
+  "OMISE_API_CHARGE_URL": "https://api.omise.co/charges"
 }

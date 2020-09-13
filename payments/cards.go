@@ -1,11 +1,17 @@
 package payments
 
 import (
+	"fmt"
 	"bytes"
 	"net/http"
 	"encoding/json"
 	"omise_challenges/config"
 )
+
+type CardToken struct {
+	ID     string `json:"id"`
+	Object string `json:"object"`
+}
 
 type CCard struct {
 	Name     string `json:"name"`
@@ -26,16 +32,8 @@ func (c *CCard) MarshalJSON() ([]byte, error) {
 	return json.Marshal(params)
 }
 
-type CardToken struct {
-	ID     string `json:"id"`
-	Object string `json:"object"`
-}
-
 func (c *CCard) CreateToken(token *CardToken) error {
-	config, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	config := config.GetConfig()
 
 	data, err := c.MarshalJSON()
 	if err != nil {
@@ -60,6 +58,14 @@ func (c *CCard) CreateToken(token *CardToken) error {
 		return err
 	}
 	defer response.Body.Close()
+
+	// In all cases of StatusCode == 400 it's expired card
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf(
+			"Request failed with error code: %d",
+			response.StatusCode,
+		)
+	}
 
 	err = json.NewDecoder(response.Body).Decode(token)
 	if err != nil {
