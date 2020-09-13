@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 )
 
-const (
-	configFilePath = "../data/config.json"
-)
+// const (
+// 	configFilePath = "../data/config.json"
+// )
 
 type appConfig struct {
 	PubKey    string `json:"OMISE_API_PUBLIC_KEY"`
@@ -20,6 +20,13 @@ type appConfig struct {
 
 var config *appConfig
 var once sync.Once
+var configFilePath = ""
+
+// SetConfigFilePath() - run before GetConfig() !
+// Last second dirty patch
+func SetConfigFilePath(fp string) {
+	configFilePath = fp
+}
 
 func GetConfig() *appConfig {
 	once.Do(func() {
